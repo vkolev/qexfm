@@ -1,11 +1,14 @@
 #!/usr/bin/env python2
 
+import os
 import sys
 from exfm.ExFmlib import ExFmLib
 from exfm.SongWidgetItem import SongWidgetItem
 from exfm.TruncatedLabel import TruncatedLabel
 from PyQt4 import QtGui, QtCore
 from PyQt4.phonon import Phonon
+
+PATH = os.path.realpath(__file__).replace('main.py', '')
 
 
 GANRES = ["Blues", "Chillwave", "Classical", "Country",
@@ -35,22 +38,22 @@ class ExfmPlayer(QtGui.QMainWindow):
         self.searchBoxWidget.setDefaultWidget(self.searchBox)
 
         # prevButton
-        prevAction = QtGui.QAction(QtGui.QIcon('data/prev24.svg'), 'Previous', self)
+        prevAction = QtGui.QAction(QtGui.QIcon(os.path.join(PATH, 'data/prev24.svg')), 'Previous', self)
         prevAction.setShortcut('Ctrl+B')
         prevAction.triggered.connect(self.previous_song)
 
         # playButton
-        self.playAction = QtGui.QAction(QtGui.QIcon('data/play24.svg'), 'Play/Stop', self)
+        self.playAction = QtGui.QAction(QtGui.QIcon(os.path.join(PATH, 'data/play24.svg')), 'Play/Stop', self)
         self.playAction.setShortcut('Ctrl+P')
         self.playAction.triggered.connect(self.play_song)
 
         # nextButton
-        nextAction = QtGui.QAction(QtGui.QIcon('data/next24.svg'), 'Next', self)
+        nextAction = QtGui.QAction(QtGui.QIcon(os.path.join(PATH, 'data/next24.svg')), 'Next', self)
         nextAction.setShortcut('Ctrl+N')
         nextAction.triggered.connect(self.next_song)
 
         # saveButton
-        saveAction = QtGui.QAction(QtGui.QIcon('data/save24.svg'), 'Save', self)
+        saveAction = QtGui.QAction(QtGui.QIcon(os.path.join(PATH, 'data/save24.svg')), 'Save', self)
         saveAction.setShortcut('Ctrl+S')
         saveAction.triggered.connect(self.save_song)
 
@@ -75,7 +78,7 @@ class ExfmPlayer(QtGui.QMainWindow):
 
         # The ToolButton
         self.toolButton = QtGui.QToolButton(self)
-        self.toolButton.setIcon(QtGui.QIcon('data/cogs24.svg'))
+        self.toolButton.setIcon(QtGui.QIcon(os.path.join(PATH, 'data/cogs24.svg')))
         self.toolButton.setPopupMode(2)
         self.toolButton.setArrowType(0)
         self.toolButton.setMenu(self.__menu())
@@ -97,9 +100,9 @@ class ExfmPlayer(QtGui.QMainWindow):
         vbox = QtGui.QVBoxLayout()
         container = QtGui.QWidget()
         self.comboBox = QtGui.QComboBox()
-        self.comboBox.addItem(QtGui.QIcon('data/trending_icon.png'), 'Trending')
-        self.comboBox.addItem(QtGui.QIcon('data/explore_icon.png'), 'Explore')
-        self.comboBox.addItem(QtGui.QIcon('data/sites_icon.png'), 'Sites')
+        self.comboBox.addItem(QtGui.QIcon(os.path.join(PATH, 'data/trending_icon.png')), 'Trending')
+        self.comboBox.addItem(QtGui.QIcon(os.path.join(PATH, 'data/explore_icon.png')), 'Explore')
+        self.comboBox.addItem(QtGui.QIcon(os.path.join(PATH, 'data/sites_icon.png')), 'Sites')
         self.comboBox.currentIndexChanged.connect(self.site_changed);
         container.setMaximumWidth(200)
         self.leftlist = QtGui.QListWidget(self)
@@ -120,14 +123,14 @@ class ExfmPlayer(QtGui.QMainWindow):
         self.setCentralWidget(splitter)
         self.setMinimumSize(800, 500)
         self.setWindowTitle('ExfmPlayer')
-        self.setWindowIcon(QtGui.QIcon('data/exfmplayer24.png'))
+        self.setWindowIcon(QtGui.QIcon(os.path.join(PATH, 'data/exfmplayer24.png')))
         self.show()
 
     def __menu(self):
         menu = QtGui.QMenu()
-        aboutAction = QtGui.QAction(QtGui.QIcon('data/about24.svg'), 'About', self)
+        aboutAction = QtGui.QAction(QtGui.QIcon(os.path.join(PATH, 'data/about24.svg')), 'About', self)
         aboutAction.triggered.connect(self.show_about)
-        exitAction = QtGui.QAction(QtGui.QIcon('data/exit24.svg'), 'Exit', self)
+        exitAction = QtGui.QAction(QtGui.QIcon(os.path.join(PATH, 'data/exit24.svg')), 'Exit', self)
         exitAction.setShortcut('Ctrl+Q')
         exitAction.triggered.connect(QtGui.qApp.quit)
         menu.addAction(aboutAction)
@@ -147,14 +150,14 @@ class ExfmPlayer(QtGui.QMainWindow):
             elif type(sender) is QtGui.QListWidgetItem:
                 self.do_search()
             else:
-                self.playAction.setIcon(QtGui.QIcon('data/pause24.svg'))
+                self.playAction.setIcon(QtGui.QIcon(os.path.join(PATH, 'data/pause24.svg')))
                 self.currentSong = sender.get_song()
                 self.currentSongLabel.setText("%s - %s" % (self.currentSong.artist, self.currentSong.title))
                 self.start_player()
         else:
             if type(sender) is not SongWidgetItem:
                 self.currentSong = None
-                self.playAction.setIcon(QtGui.QIcon('data/play24.svg'))
+                self.playAction.setIcon(QtGui.QIcon(os.path.join(PATH, 'data/play24.svg')))
                 self.currentSongLabel.setText("Artist - Title")
                 self.m_media.stop()
             elif type(sender) is QtGui.QListWidgetItem:
@@ -214,7 +217,8 @@ class ExfmPlayer(QtGui.QMainWindow):
         self.rightlist.clear()
         for song in search.songs:
             try:
-                self.rightlist.addItem(SongWidgetItem(song, QtGui.QIcon('data/folder-music.svg')))
+                self.rightlist.addItem(SongWidgetItem(song,
+                                QtGui.QIcon(os.path.join(PATH, 'data/folder-music.svg'))))
             except TypeError:
                 pass
         
