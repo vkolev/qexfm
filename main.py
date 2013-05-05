@@ -5,6 +5,8 @@ from exfm.ExFmlib import ExFmLib
 from exfm.SongWidgetItem import SongWidgetItem
 from exfm.TruncatedLabel import TruncatedLabel
 from PyQt4 import QtGui, QtCore
+from PyQt4.phonon import Phonon
+
 
 GANRES = ["Blues", "Chillwave", "Classical", "Country",
 "Dubstep", "Electronica", "Experimental", "Folk", "Hip-hop",
@@ -19,6 +21,7 @@ class ExfmPlayer(QtGui.QMainWindow):
         self.songs = []
         self.currentSong = None
         self.searchTerm = ""
+        self.m_media = None
         self.initUI()
 
     def initUI(self):
@@ -138,17 +141,28 @@ class ExfmPlayer(QtGui.QMainWindow):
                 self.playAction.setIcon(QtGui.QIcon('data/pause24.svg'))
                 self.currentSong = sender.get_song()
                 self.currentSongLabel.setText("%s - %s" % (self.currentSong.artist, self.currentSong.title))
+                self.start_player()
         else:
             if type(sender) is not SongWidgetItem:
                 self.currentSong = None
                 self.playAction.setIcon(QtGui.QIcon('data/play24.svg'))
                 self.currentSongLabel.setText("Artist - Title")
+                self.m_media.stop()
             elif type(sender) is QtGui.QListWidgetItem:
                 self.do_search()
             else:
                 self.currentSong = sender.get_song()
                 self.currentSongLabel.setText("%s - %s" % (self.currentSong.artist, self.currentSong.title))
+                self.start_player()
         print "Play/Stop Button pressed"
+        
+    def start_player(self):
+        output = Phonon.AudioOutput(Phonon.MusicCategory, self)
+        self.m_media = Phonon.MediaObject()
+        Phonon.createPath(self.m_media, output)
+        self.m_media.setCurrentSource(Phonon.MediaSource(QtCore.QUrl(self.currentSong.get_url())))
+        self.m_media.play()
+        
 
     def next_song(self, sender):
         print "Next button pressed"
@@ -184,10 +198,10 @@ class ExfmPlayer(QtGui.QMainWindow):
         if category == "Trending":
             search = client.get_trending(tag.lower(), self.rightlist.count(), 20)
         elif category == "Explore":
-            search = client.get_trending(tag.lower(), self.rightlist.count(), 20)
+            search = client.get_explore(tag.lower(), self.rightlist.count(), 20)
         else:
             search = client.get_trending(tag.lower(), self.rightlist.count(), 20)
-        
+        self.rightlist.clear()
         for song in search.songs:
             try:
                 self.rightlist.addItem(SongWidgetItem(song, QtGui.QIcon('data/folder-music.svg')))

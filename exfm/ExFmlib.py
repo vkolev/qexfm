@@ -6,6 +6,7 @@ import urllib2
 API_URL = "http://ex.fm/api/v3/"
 API_URL_TREND = r"http://ex.fm/api/v3/trending/tag/{tag}"
 API_URL_SEARCH = r"http://ex.fm/api/v3/song/search/{term}"
+API_URL_EXPLORE = r"http://ex.fm/api/v3/explore/{ganre}"
 
 
 class ExFmLib:
@@ -19,6 +20,12 @@ class ExFmLib:
         print url
         r = requests.get(url, params=payload)
         print r.text
+        return ResultList(r.text)
+    
+    def get_explore(self, ganre="hip-hop", start=0, end=20):
+        url = API_URL_EXPLORE.format(ganre=ganre)
+        payload = {'start': start, 'end': end}
+        r = requests.get(url, params=payload)
         return ResultList(r.text)
     
     def get_search(self, term="", start=0, end=20):
