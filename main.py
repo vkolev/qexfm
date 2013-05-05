@@ -2,6 +2,8 @@
 
 import sys
 from exfm.ExFmlib import ExFmLib
+from exfm.SongWidgetItem import SongWidgetItem
+from exfm.TruncatedLabel import TruncatedLabel
 from PyQt4 import QtGui, QtCore
 
 GANRES = ["Blues", "Chillwave", "Classical", "Country",
@@ -14,6 +16,9 @@ class ExfmPlayer(QtGui.QMainWindow):
 
     def __init__(self):
         super(ExfmPlayer, self).__init__()
+        self.songs = []
+        self.currentSong = None
+        self.searchTerm = ""
         self.initUI()
 
     def initUI(self):
@@ -47,10 +52,10 @@ class ExfmPlayer(QtGui.QMainWindow):
         saveAction.triggered.connect(self.save_song)
 
         # CurrentSong
-        self.currentSongLabel = QtGui.QLabel()
+        self.currentSongLabel = TruncatedLabel()
         font = QtGui.QFont()
         font.setPointSize(14)
-        self.currentSongLabel.setText("<b>Artist</b> - Title")
+        self.currentSongLabel.setText("Artist - Title")
         self.currentSongLabel.setFont(font)
         self.currentSongLabel.setAlignment(QtCore.Qt.AlignCenter)
         self.currentSongLabel.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
@@ -80,26 +85,28 @@ class ExfmPlayer(QtGui.QMainWindow):
         
         vbox = QtGui.QVBoxLayout()
         container = QtGui.QWidget()
-        comboBox = QtGui.QComboBox()
-        comboBox.addItem(QtGui.QIcon('data/trending_icon.png'), 'Trending')
-        comboBox.addItem(QtGui.QIcon('data/explore_icon.png'), 'Explore')
-        comboBox.addItem(QtGui.QIcon('data/sites_icon.png'), 'Sites')
-        comboBox.currentIndexChanged.connect(self.site_changed);
+        self.comboBox = QtGui.QComboBox()
+        self.comboBox.addItem(QtGui.QIcon('data/trending_icon.png'), 'Trending')
+        self.comboBox.addItem(QtGui.QIcon('data/explore_icon.png'), 'Explore')
+        self.comboBox.addItem(QtGui.QIcon('data/sites_icon.png'), 'Sites')
+        self.comboBox.currentIndexChanged.connect(self.site_changed);
         container.setMaximumWidth(200)
         self.leftlist = QtGui.QListWidget(self)
         self.leftlist.setMaximumWidth(200)
+        self.leftlist.addItems(GANRES)
         self.leftlist.itemDoubleClicked.connect(self.change_music)
-        vbox.addWidget(comboBox)
+        vbox.addWidget(self.comboBox)
         vbox.addWidget(self.leftlist)
         container.setLayout(vbox)
-        self.label = QtGui.QLabel('<b>Select ganre</b>')
+        self.rightlist = QtGui.QListWidget(self)
+        self.rightlist.itemDoubleClicked.connect(self.play_song)
         
         splitter = QtGui.QSplitter(QtCore.Qt.Horizontal)
         splitter.addWidget(container)
-        splitter.addWidget(self.label)
+        splitter.addWidget(self.rightlist)
         
         self.setCentralWidget(splitter)
-        self.setMinimumSize(800, 600)
+        self.setMinimumSize(800, 500)
         self.setWindowTitle('ExfmPlayer')
         self.setWindowIcon(QtGui.QIcon('data/exfmplayer24.png'))
         self.show()
@@ -122,10 +129,25 @@ class ExfmPlayer(QtGui.QMainWindow):
         print "Prev button pressed"
 
     def play_song(self, sender):
-        self.playAction.setIcon(QtGui.QIcon('data/pause24.svg'))
-        client = ExFmLib()
-        trending = client.get_trending('hip-hop', 0, 20)
-        print trending.status_code
+        if self.currentSong is None:
+            if type(sender) is bool:
+                pass
+            elif type(sender) is QtGui.QListWidgetItem:
+                self.do_search()
+            else:
+                self.playAction.setIcon(QtGui.QIcon('data/pause24.svg'))
+                self.currentSong = sender.get_song()
+                self.currentSongLabel.setText("%s - %s" % (self.currentSong.artist, self.currentSong.title))
+        else:
+            if type(sender) is not SongWidgetItem:
+                self.currentSong = None
+                self.playAction.setIcon(QtGui.QIcon('data/play24.svg'))
+                self.currentSongLabel.setText("Artist - Title")
+            elif type(sender) is QtGui.QListWidgetItem:
+                self.do_search()
+            else:
+                self.currentSong = sender.get_song()
+                self.currentSongLabel.setText("%s - %s" % (self.currentSong.artist, self.currentSong.title))
         print "Play/Stop Button pressed"
 
     def next_song(self, sender):
@@ -133,14 +155,44 @@ class ExfmPlayer(QtGui.QMainWindow):
 
     def do_search(self):
         client = ExFmLib()
-        search = client.get_search(str(self.searchBox.text()), 0, 20)
-        self.label.setText(search.songs[0].title)
+        term = str(self.searchBox.text())
+        if self.searchTerm != term:
+            self.searchTerm = term
+            self.rightlist.clear()
+        self.setWindowTitle("ExFmPlayer [%s]" % self.searchTerm)
+        search = client.get_search(self.searchTerm, self.rightlist.count(), 20)
+        try:
+            self.rightlist.currentItem().setHidden(True)
+        except Exception:
+            pass
+        for song in search.songs:
+            try:
+                self.rightlist.addItem(SongWidgetItem(song, QtGui.QIcon('data/folder-music.svg')))
+            except TypeError:
+                pass
+        self.rightlist.addItem(QtGui.QListWidgetItem(QtGui.QIcon('data/go-next.svg'), 'Load more...'))
 
     def save_song(self, sender):
         print "Saving current song"
         
     def change_music(self, sender):
-        self.label.setText(sender.text())
+        client = ExFmLib()
+        tag = str(sender.text())
+        category = str(self.comboBox.currentText())
+        self.setWindowTitle("ExFmPlayer [%s in %s]" % (tag, category))
+        search = None
+        if category == "Trending":
+            search = client.get_trending(tag.lower(), self.rightlist.count(), 20)
+        elif category == "Explore":
+            search = client.get_trending(tag.lower(), self.rightlist.count(), 20)
+        else:
+            search = client.get_trending(tag.lower(), self.rightlist.count(), 20)
+        
+        for song in search.songs:
+            try:
+                self.rightlist.addItem(SongWidgetItem(song, QtGui.QIcon('data/folder-music.svg')))
+            except TypeError:
+                pass
         
     def site_changed(self, sender):
         if sender != 2:
@@ -150,12 +202,7 @@ class ExfmPlayer(QtGui.QMainWindow):
             self.leftlist.clear()
                 
 
-
-def main():
-
+if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     player = ExfmPlayer()
     sys.exit(app.exec_())
-
-if __name__ == "__main__":
-    main()

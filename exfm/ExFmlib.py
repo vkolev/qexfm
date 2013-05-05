@@ -16,7 +16,9 @@ class ExFmLib:
     def get_trending(self, tag="hip-hop", start=0, end=20):
         url = API_URL_TREND.format(tag=tag)
         payload = {'start': start, 'end': end}
+        print url
         r = requests.get(url, params=payload)
+        print r.text
         return ResultList(r.text)
     
     def get_search(self, term="", start=0, end=20):

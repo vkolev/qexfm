@@ -7,6 +7,7 @@ from exfm.Song import Song
 from exfm.Image import Image
 import json
 
+
 class ResultList:
     
     def __init__(self, json_data):

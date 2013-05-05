@@ -26,6 +26,6 @@ class Song(object):
         
     def get_url(self):
         if "soundcloud" in self.url:
-            self.url += "?apikey=123kd01jd20sd02"
+            self.url += "?consumer_key=leL50hzZ1H8tAdKCLSCnw"
         return self.url
         
