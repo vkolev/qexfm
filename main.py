@@ -57,13 +57,21 @@ class ExfmPlayer(QtGui.QMainWindow):
         # CurrentSong
         self.currentSongLabel = TruncatedLabel()
         font = QtGui.QFont()
-        font.setPointSize(14)
+        font.setPointSize(9)
+        titleSeek = QtGui.QVBoxLayout()
+        titleSeek.setSpacing(0)
+        playContainer = QtGui.QWidget()
         self.currentSongLabel.setText("Artist - Title")
         self.currentSongLabel.setFont(font)
         self.currentSongLabel.setAlignment(QtCore.Qt.AlignCenter)
         self.currentSongLabel.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        self.seeker = Phonon.SeekSlider()
+        self.seeker.setIconVisible(False)
+        titleSeek.addWidget(self.currentSongLabel)
+        titleSeek.addWidget(self.seeker)
+        playContainer.setLayout(titleSeek)
         spacerActionWidget = QtGui.QWidgetAction(self)
-        spacerActionWidget.setDefaultWidget(self.currentSongLabel)
+        spacerActionWidget.setDefaultWidget(playContainer)
 
         # The ToolButton
         self.toolButton = QtGui.QToolButton(self)
@@ -161,6 +169,7 @@ class ExfmPlayer(QtGui.QMainWindow):
         self.m_media = Phonon.MediaObject()
         Phonon.createPath(self.m_media, output)
         self.m_media.setCurrentSource(Phonon.MediaSource(QtCore.QUrl(self.currentSong.get_url())))
+        self.seeker.setMediaObject(self.m_media)
         self.m_media.play()
         
 
