@@ -22,6 +22,7 @@ class ExfmPlayer(QtGui.QMainWindow):
     def __init__(self):
         super(ExfmPlayer, self).__init__()
         self.songs = []
+        self.currentPosition = None
         self.currentSong = None
         self.searchTerm = ""
         self.m_media = None
@@ -152,6 +153,7 @@ class ExfmPlayer(QtGui.QMainWindow):
             else:
                 self.playAction.setIcon(QtGui.QIcon(os.path.join(PATH, 'data/pause24.svg')))
                 self.currentSong = sender.get_song()
+                self.currentPosition = self.rightlist.currentRow()
                 self.currentSongLabel.setText("%s - %s" % (self.currentSong.artist, self.currentSong.title))
                 self.start_player()
         else:
@@ -165,6 +167,8 @@ class ExfmPlayer(QtGui.QMainWindow):
             else:
                 self.currentSong = sender.get_song()
                 self.currentSongLabel.setText("%s - %s" % (self.currentSong.artist, self.currentSong.title))
+                self.currentPosition = sender.index()
+                self.currentPosition = 0
                 self.start_player()
         print "Play/Stop Button pressed"
         
@@ -174,11 +178,27 @@ class ExfmPlayer(QtGui.QMainWindow):
         Phonon.createPath(self.m_media, output)
         self.m_media.setCurrentSource(Phonon.MediaSource(QtCore.QUrl(self.currentSong.get_url())))
         self.seeker.setMediaObject(self.m_media)
+        self.m_media.finished.connect(self.next_song)
         self.m_media.play()
         
 
-    def next_song(self, sender):
-        print "Next button pressed"
+    def next_song(self):
+        if self.currentPosition == None:
+            self.currentPosition = 0
+        else:
+            self.currentPosition += 1
+        songWidget = self.rightlist.item(self.currentPosition)
+        songWidget.setSelected(True)
+        self.currentSong = songWidget.get_song()
+        self.currentSongLabel.setText("%s - %s" % (self.currentSong.artist, self.currentSong.title))
+        output = Phonon.AudioOutput(Phonon.MusicCategory, self)
+        self.m_media = Phonon.MediaObject()
+        Phonon.createPath(self.m_media, output)
+        self.m_media.setCurrentSource(Phonon.MediaSource(QtCore.QUrl(self.currentSong.get_url())))
+        self.seeker.setMediaObject(self.m_media)
+        self.m_media.finished.connect(self.next_song)
+        self.playAction.setIcon(QtGui.QIcon(os.path.join(PATH, 'data/pause24.svg')))
+        self.m_media.play()
 
     def do_search(self):
         client = ExFmLib()
