@@ -103,6 +103,7 @@ class ExfmPlayer(QtGui.QMainWindow):
         self.comboBox.currentIndexChanged.connect(self.site_changed);
         container.setMaximumWidth(200)
         self.leftlist = QtGui.QListWidget(self)
+        self.leftlist.setFrameShape(QtGui.QFrame.NoFrame)
         self.leftlist.setMaximumWidth(200)
         self.leftlist.addItems(GANRES)
         self.leftlist.itemDoubleClicked.connect(self.change_music)
@@ -227,5 +228,6 @@ class ExfmPlayer(QtGui.QMainWindow):
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
+    app.setApplicationName('qExFmPlayer')
     player = ExfmPlayer()
     sys.exit(app.exec_())
