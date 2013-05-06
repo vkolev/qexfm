@@ -7,6 +7,7 @@ from exfm.SongWidgetItem import SongWidgetItem
 from exfm.TruncatedLabel import TruncatedLabel
 from PyQt4 import QtGui, QtCore
 from PyQt4.phonon import Phonon
+from AboutDialog import MyDialog
 
 PATH = os.path.realpath(__file__).replace('main.py', '')
 
@@ -142,7 +143,9 @@ class ExfmPlayer(QtGui.QMainWindow):
         return menu
 
     def show_about(self, sender):
-        print "Show about dialog"
+        aboutDlg = MyDialog(self)
+        aboutDlg.exec_()
+        
 
     def previous_song(self, sender):
         if self.currentPosition == None:
