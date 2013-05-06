@@ -26,6 +26,7 @@ class ExfmPlayer(QtGui.QMainWindow):
         self.currentSong = None
         self.searchTerm = ""
         self.m_media = None
+        self.lastsearch = ""
         self.initUI()
 
     def initUI(self):
@@ -115,6 +116,8 @@ class ExfmPlayer(QtGui.QMainWindow):
         vbox.addWidget(self.leftlist)
         container.setLayout(vbox)
         self.rightlist = QtGui.QListWidget(self)
+        self.scrollbarRight = self.rightlist.verticalScrollBar()
+        self.scrollbarRight.sliderReleased.connect(self.load_more)
         self.rightlist.itemDoubleClicked.connect(self.play_song)
         
         splitter = QtGui.QSplitter(QtCore.Qt.Horizontal)
@@ -142,7 +145,22 @@ class ExfmPlayer(QtGui.QMainWindow):
         print "Show about dialog"
 
     def previous_song(self, sender):
-        print "Prev button pressed"
+        if self.currentPosition == None:
+            self.currentPosition = self.rightlist.count() - 1
+        else:
+            self.currentPosition -= 1
+        songWidget = self.rightlist.item(self.currentPosition)
+        songWidget.setSelected(True)
+        self.currentSong = songWidget.get_song()
+        self.currentSongLabel.setText("%s - %s" % (self.currentSong.artist, self.currentSong.title))
+        output = Phonon.AudioOutput(Phonon.MusicCategory, self)
+        self.m_media = Phonon.MediaObject()
+        Phonon.createPath(self.m_media, output)
+        self.m_media.setCurrentSource(Phonon.MediaSource(QtCore.QUrl(self.currentSong.get_url())))
+        self.seeker.setMediaObject(self.m_media)
+        self.m_media.finished.connect(self.next_song)
+        self.playAction.setIcon(QtGui.QIcon(os.path.join(PATH, 'data/pause24.svg')))
+        self.m_media.play()
 
     def play_song(self, sender):
         if self.currentSong is None:
@@ -199,8 +217,20 @@ class ExfmPlayer(QtGui.QMainWindow):
         self.m_media.finished.connect(self.next_song)
         self.playAction.setIcon(QtGui.QIcon(os.path.join(PATH, 'data/pause24.svg')))
         self.m_media.play()
+        
+    def load_more(self, sender=None):
+        client = ExFmLib()
+        print "Maximum %i" % self.scrollbarRight.maximum()
+        if self.rightlist.count() < 100:
+            search = client.get_search(self.searchTerm, self.rightlist.count(), 20)
+            for song in search.songs:
+                try:
+                    self.rightlist.addItem(SongWidgetItem(song, QtGui.QIcon('data/folder-music.svg')))
+                except TypeError:
+                    pass
+            
 
-    def do_search(self):
+    def do_search(self, sender=None):
         client = ExFmLib()
         term = str(self.searchBox.text())
         if self.searchTerm != term:
@@ -208,16 +238,11 @@ class ExfmPlayer(QtGui.QMainWindow):
             self.rightlist.clear()
         self.setWindowTitle("ExFmPlayer [%s]" % self.searchTerm)
         search = client.get_search(self.searchTerm, self.rightlist.count(), 20)
-        try:
-            self.rightlist.currentItem().setHidden(True)
-        except Exception:
-            pass
         for song in search.songs:
             try:
                 self.rightlist.addItem(SongWidgetItem(song, QtGui.QIcon('data/folder-music.svg')))
             except TypeError:
                 pass
-        self.rightlist.addItem(QtGui.QListWidgetItem(QtGui.QIcon('data/go-next.svg'), 'Load more...'))
 
     def save_song(self, sender):
         print "Saving current song"
