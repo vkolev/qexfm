@@ -24,7 +24,7 @@ except AttributeError:
     def _translate(context, text, disambig):
         return QtGui.QApplication.translate(context, text, disambig)
     
-PATH = os.path.realpath(__file__).replace('DialogExample.py', '')
+PATH = os.path.realpath(__file__).replace('Ui_AboutDialog.py', '')
 
 class Ui_AboutDialog(object):
     def setupUi(self, AboutDialog):
